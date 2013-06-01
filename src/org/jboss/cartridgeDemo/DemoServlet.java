@@ -3,31 +3,7 @@ package org.jboss.cartridgeDemo;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.net.SocketAddress;
 
-import java.util.Properties;
-import java.util.StringTokenizer;
-
-import javax.jms.Connection;
-import javax.jms.DeliveryMode;
-import javax.jms.Destination;
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-import javax.jms.TextMessage;
-import javax.mail.Address;
-//import javax.mail.Message;
-import javax.mail.Provider;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NameClassPair;
-import javax.naming.NamingEnumeration;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -35,7 +11,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.log4j.*;
 
 /**
@@ -113,6 +88,9 @@ public class DemoServlet extends HttpServlet {
 				value = "caught " + e + "\n";
 				out.write(value.getBytes());
 			}
+			
+			SimpleProducer producer = new SimpleProducer();
+			producer.produce(System.getenv("OPENSHIFT_ACTIVEMQ_AMQP_HOST"), System.getenv("OPENSHIFT_ACTIVEMQ_AMQP_PORT"));
 		} catch (Exception e){
 			e.printStackTrace();
 		} finally {
