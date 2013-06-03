@@ -18,10 +18,13 @@
 package org.jboss.cartridgeDemo;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
+
+import net.spy.memcached.MemcachedClient;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.log4j.*;
@@ -31,19 +34,25 @@ public class SimpleConsumer extends Thread implements MessageListener {
 
     private static final String DESTINATION_NAME = "queue/simple";
     
-    private String host;
-    private String port;
+    private String key;
+    private String amqHost;
+    private String amqPort;
+    private String infHost;
+    private String infPort;
     
-    public SimpleConsumer(String host, String port) {
-    	this.host = host;
-    	this.port = port;
+    public SimpleConsumer(String key, String amqHost, String amqPort, String infHost, String infPort) {
+    	this.key = key;
+    	this.amqHost = amqHost;
+    	this.amqPort = amqPort;
+    	this.infHost = infHost;
+    	this.infPort = infPort;
     }
 
     public void run() {
         Connection connection = null;
 
         try {
-        	ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory("tcp://" + host + ":" + port);
+        	ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory("tcp://" + amqHost + ":" + amqPort);
             connection = connectionFactory.createConnection();
             connection.start();
 
@@ -91,7 +100,18 @@ public class SimpleConsumer extends Thread implements MessageListener {
 
     
     public void onMessage(Message message) {
-
         LOG.info("!!!! received message " + message);
+        
+        TextMessage tm = (TextMessage)message;
+        
+        try {
+        
+        	MemcachedClient client = new MemcachedClient(new InetSocketAddress(infHost, Integer.parseInt(infPort)));
+        	LOG.info("!!!! caching " + key);
+        	client.add(key, -1, tm.getText());
+        } catch (Exception e){
+        	e.printStackTrace();
+        }
+        
     }
 }

@@ -41,6 +41,8 @@
 	<classpathentry kind="var" path="M2_REPO/org/apache/geronimo/specs/geronimo-jms_1.1_spec/1.1.1/geronimo-jms_1.1_spec-1.1.1.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/fusesource/hawtbuf/hawtbuf/1.9/hawtbuf-1.9.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/apache/geronimo/specs/geronimo-j2ee-management_1.1_spec/1.0.1/geronimo-j2ee-management_1.1_spec-1.0.1.jar"/>
+	<classpathentry kind="var" path="M2_REPO/com/google/code/simple-spring-memcached/spymemcached/2.8.1/spymemcached-2.8.1.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/spymemcached-2.8.1.jar"/>
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/activemq-client-5.8.0.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

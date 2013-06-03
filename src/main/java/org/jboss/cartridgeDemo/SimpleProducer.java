@@ -31,7 +31,7 @@ public class SimpleProducer {
     	
     }
 
-    public void produce(String host, String port) {
+    public String produce(String host, String port) {
         Connection connection = null;
 
         try {
@@ -48,8 +48,9 @@ public class SimpleProducer {
             producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
             
             TextMessage message = session.createTextMessage("Message" + System.currentTimeMillis());
-
             producer.send(message);
+            
+            return message.getText();
 
         } catch (Throwable t) {
             LOG.error("Error sending message", t);
@@ -62,5 +63,7 @@ public class SimpleProducer {
                 }
             }
         }
+        
+        return null;
     }
 }
