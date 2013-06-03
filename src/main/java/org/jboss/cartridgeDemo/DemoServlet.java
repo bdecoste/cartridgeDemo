@@ -52,9 +52,9 @@ public class DemoServlet extends HttpServlet {
 		Socket socket = null;
 		try {
 			out = response.getOutputStream();
-			String value = "OPENSHIFT_ACTIVEMQ_AMQP_HOST " + System.getenv("OPENSHIFT_ACTIVEMQ_AMQP_HOST") + "\n";
+			String value = "OPENSHIFT_ACTIVEMQ_OPENWIRE_HOST " + System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_HOST") + "\n";
 			out.write(value.getBytes());
-			value = "OPENSHIFT_ACTIVEMQ_AMQP_PORT " + System.getenv("OPENSHIFT_ACTIVEMQ_AMQP_PORT") + "\n";
+			value = "OPENSHIFT_ACTIVEMQ_OPENWIRE_PORT " + System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_PORT") + "\n";
 			out.write(value.getBytes());
 			value = "OPENSHIFT_ACTIVEMQ_IP " + System.getenv("OPENSHIFT_ACTIVEMQ_IP") + "\n";
 			out.write(value.getBytes());
@@ -70,7 +70,7 @@ public class DemoServlet extends HttpServlet {
 			out.write(value.getBytes());
 			
 			try {
-				socket = new Socket(System.getenv("OPENSHIFT_ACTIVEMQ_AMQP_HOST"), Integer.parseInt(System.getenv("OPENSHIFT_ACTIVEMQ_AMQP_PORT")));
+				socket = new Socket(System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_HOST"), Integer.parseInt(System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_PORT")));
 				value = "connected " + socket.isConnected() + "\n";
 				out.write(value.getBytes());
 			} catch (Exception e){
@@ -89,8 +89,14 @@ public class DemoServlet extends HttpServlet {
 				out.write(value.getBytes());
 			}
 			
+			Thread consumer = new Thread(new SimpleConsumer(System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_HOST"), System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_PORT")));
+			consumer.run();
+			
 			SimpleProducer producer = new SimpleProducer();
-			producer.produce(System.getenv("OPENSHIFT_ACTIVEMQ_AMQP_HOST"), System.getenv("OPENSHIFT_ACTIVEMQ_AMQP_PORT"));
+			producer.produce(System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_HOST"), System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_PORT"));
+			
+			value = "Produced!!\n";
+			out.write(value.getBytes());
 		} catch (Exception e){
 			e.printStackTrace();
 		} finally {
