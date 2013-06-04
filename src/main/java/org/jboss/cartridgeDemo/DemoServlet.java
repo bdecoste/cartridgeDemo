@@ -2,6 +2,7 @@ package org.jboss.cartridgeDemo;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
@@ -52,61 +53,55 @@ public class DemoServlet extends HttpServlet {
 	
 	protected void doIt(HttpServletRequest request, HttpServletResponse response) {
 		
-		OutputStream out = null;
+		PrintWriter out = null;
 		Socket socket = null;
 		try {
-			out = response.getOutputStream();
-			String value = "OPENSHIFT_ACTIVEMQ_OPENWIRE_HOST " + System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_HOST") + "\n";
-			out.write(value.getBytes());
-			value = "OPENSHIFT_ACTIVEMQ_OPENWIRE_PORT " + System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_PORT") + "\n";
-			out.write(value.getBytes());
-			value = "OPENSHIFT_ACTIVEMQ_IP " + System.getenv("OPENSHIFT_ACTIVEMQ_IP") + "\n";
-			out.write(value.getBytes());
-			value = "---------------------------------------------------\n";
-			out.write(value.getBytes());
-			value = "OPENSHIFT_INFINISPAN_HOST " + System.getenv("OPENSHIFT_INFINISPAN_HOST") + "\n";
-			out.write(value.getBytes());
-			value = "OPENSHIFT_INFINISPAN_PORT " + System.getenv("OPENSHIFT_INFINISPAN_PORT") + "\n";
-			out.write(value.getBytes());
-			value = "OPENSHIFT_INFINISPAN_IP " + System.getenv("OPENSHIFT_INFINISPAN_IP") + "\n";
-			out.write(value.getBytes());
+			response.setContentType("text/html");
+			out = response.getWriter();
 			
-			try {
-				socket = new Socket(System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_HOST"), Integer.parseInt(System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_PORT")));
-				value = "connected " + socket.isConnected() + "\n";
-				out.write(value.getBytes());
-			} catch (Exception e){
-				e.printStackTrace();
-				value = "caught " + e + "\n";
-				out.write(value.getBytes());
-			}
+			out.println("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 " +
+                    "Transitional//EN\">\n" +
+                    "<HTML>\n" +
+                    "<HEAD><TITLE>Hello WWW</TITLE></HEAD>\n" +
+					"<BODY>\n" );
 			
-			try {
-				socket = new Socket(System.getenv("OPENSHIFT_INFINISPAN_HOST"), Integer.parseInt(System.getenv("OPENSHIFT_INFINISPAN_PORT")));
-				value = "connected " + socket.isConnected() + "\n";
-				out.write(value.getBytes());
-			} catch (Exception e){
-				e.printStackTrace();
-				value = "caught " + e + "\n";
-				out.write(value.getBytes());
-			}
 			
-			Thread consumer = new Thread(new SimpleConsumer(Integer.toString(key), System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_HOST"), System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_PORT"), System.getenv("OPENSHIFT_INFINISPAN_HOST"), System.getenv("OPENSHIFT_INFINISPAN_PORT")));
-			consumer.run();
-			
-			SimpleProducer producer = new SimpleProducer();
-			producer.produce(System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_HOST"), System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_PORT"));
-			
-			value = "Produced!!\n";
-			out.write(value.getBytes());
+			out.println("<H2>Connecting to ActiveMQ using:</H2>");
+			out.println("<H3>&nbsp&nbsp&nbsp" + System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_HOST") +":" + System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_PORT") + "</H3>");
+			out.println("<H2>Connecting to ActiveMQ using:</H2>");
+			out.println("<H3>&nbsp&nbsp&nbsp" + System.getenv("OPENSHIFT_INFINISPAN_HOST") +":" + System.getenv("OPENSHIFT_INFINISPAN_PORT") + "</H3>");
 			
 			MemcachedClient client = new MemcachedClient(new InetSocketAddress(System.getenv("OPENSHIFT_INFINISPAN_HOST"), Integer.parseInt(System.getenv("OPENSHIFT_INFINISPAN_PORT"))));
+			
+			SimpleConsumer consumer = new SimpleConsumer(Integer.toString(key), System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_HOST"), System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_PORT"), System.getenv("OPENSHIFT_INFINISPAN_HOST"), System.getenv("OPENSHIFT_INFINISPAN_PORT"));
+			
+			if (key == 0 ) {
+				for (int i = 0 ; i < 20 ; ++i ){
+					client.delete(Integer.toString(i));
+				}
+				
+				consumer.clear();
+			}
+			
+			SimpleProducer producer = new SimpleProducer();
+			String message = producer.produce(System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_HOST"), System.getenv("OPENSHIFT_ACTIVEMQ_OPENWIRE_PORT"));
+			
+			LOG.info("!!!!!!!!!! sent " + message);
+			
+			out.println("<H2>Sent Message " + message + "</H2>");
+			
+			
+			consumer.run();
+			
+			out.println("<H2>Infinispan Cache View</H2>");
+			
 			for (int i = 0 ; i < key ; ++i ){
 				Object cached = client.get(Integer.toString(i));
-			
-				value = "Cached " + i + "=" + cached + "\n";
-				out.write(value.getBytes());
+				
+				out.println("<H3>&nbsp&nbsp&nbsp" + i + "=" + cached + "</H3>");
 			}
+			
+			out.println("</BODY></HTML>");
 			
 			++key;
 		} catch (Exception e){

@@ -62,17 +62,38 @@ public class SimpleConsumer extends Thread implements MessageListener {
 
             MessageConsumer consumer = session.createConsumer(destination);
 
-            TextMessage message = session.createTextMessage("Message" + System.currentTimeMillis());
+            consumeMessageAndClose(connection, session, consumer, 60);
+        } catch (Throwable t) {
+            LOG.error("Error receiving message", t);
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (JMSException e) {
+                    LOG.error("Error closing connection", e);
+                }
+            }
+        }
+    }
+    
+    public void clear() {
+        Connection connection = null;
+
+        try {
+        	ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory("tcp://" + amqHost + ":" + amqPort);
+            connection = connectionFactory.createConnection();
+            connection.start();
+
+            // Create the session
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Destination destination = session.createQueue(DESTINATION_NAME);
+
+            MessageConsumer consumer = session.createConsumer(destination);
 
             consumeMessagesAndClose(connection, session, consumer, 60);
         } catch (Throwable t) {
             LOG.error("Error receiving message", t);
         } finally {
-            // Cleanup code
-            // In general, you should always close producers, consumers,
-            // sessions, and connections in reverse order of creation.
-            // For this simple example, a JMS connection.close will
-            // clean up all other resources.
             if (connection != null) {
                 try {
                     connection.close();
@@ -85,11 +106,23 @@ public class SimpleConsumer extends Thread implements MessageListener {
     
     protected void consumeMessagesAndClose(Connection connection, Session session, MessageConsumer consumer, long timeout)
             throws JMSException, IOException {
-        System.out.println("[" + this.getName() + "] We will consume messages while they continue to be delivered within: " + timeout
-                + " ms, and then we will shutdown");
 
         Message message;
-        while ((message = consumer.receive(timeout)) != null) {
+        while ((message = consumer.receive(60)) != null) {
+        	TextMessage tm = (TextMessage)message;
+            LOG.info("!!!!!! clearing " + tm.getText());
+        }
+
+        consumer.close();
+        session.close();
+        connection.close();
+    }
+    
+    protected void consumeMessageAndClose(Connection connection, Session session, MessageConsumer consumer, long timeout)
+            throws JMSException, IOException {
+
+        Message message;
+        if ((message = consumer.receive(60)) != null) {
             onMessage(message);
         }
 
@@ -100,14 +133,15 @@ public class SimpleConsumer extends Thread implements MessageListener {
 
     
     public void onMessage(Message message) {
-        LOG.info("!!!! received message " + message);
         
         TextMessage tm = (TextMessage)message;
         
         try {
-        
+        	
+        	LOG.info("!!!! received message " + tm.getText());
+        	
         	MemcachedClient client = new MemcachedClient(new InetSocketAddress(infHost, Integer.parseInt(infPort)));
-        	LOG.info("!!!! caching " + key);
+        	LOG.info("!!!! caching " + key + " " + tm.getText());
         	client.add(key, -1, tm.getText());
         } catch (Exception e){
         	e.printStackTrace();
