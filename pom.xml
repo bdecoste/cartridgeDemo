@@ -107,7 +107,7 @@
 <version>2.1.1</version>
 <configuration>
 <outputDirectory>deployments</outputDirectory>
-<warName>cartridgeDemo</warName>
+<warName>ROOT</warName>
 </configuration>
 </plugin>
 </plugins>
